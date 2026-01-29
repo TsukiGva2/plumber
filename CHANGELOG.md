@@ -1,3 +1,10 @@
+## [0.1.21](https://github.com/getplumber/plumber/compare/v0.1.20...v0.1.21) (2026-01-29)
+
+
+### ✨ Features
+
+* **analyze:** Make conf and threshold optional ([bf6a4df](https://github.com/getplumber/plumber/commit/bf6a4dfc3c306d0bb9bd3cd8e7e6a20bcaf9522a))
+
 ## [0.1.20](https://github.com/getplumber/plumber/compare/v0.1.19...v0.1.20) (2026-01-28)
 
 
