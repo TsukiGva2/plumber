@@ -43,14 +43,64 @@ Choose **one** of these methods — you don't need both:
 
 | Method | Best for | How it works |
 |--------|----------|--------------|
-| **[GitLab CI Component](#option-1-gitlab-ci-component)** | Automated checks on every pipeline run | Add 2 lines to your `.gitlab-ci.yml` |
-| **[CLI](#option-2-cli)** | Local testing, one-off scans, non-GitLab CI | Install binary and run from terminal |
+| **[CLI](#option-1-cli)** | Quick evaluation, local testing, one-off scans | Install binary and run from terminal |
+| **[GitLab CI Component](#option-2-gitlab-ci-component)** | Automated checks on every pipeline run | Add 2 lines to your `.gitlab-ci.yml` |
 
 ---
 
-## Option 1: GitLab CI Component
+## 📖 Table of Contents
 
-**Add Plumber to your GitLab pipeline** — it will run automatically on every commit.
+- [What is Plumber?](#-what-is-plumber)
+- [CLI](#option-1-cli)
+- [GitLab CI Component](#option-2-gitlab-ci-component)
+- [Configuration](#%EF%B8%8F-configuration)
+- [Installation](#-installation)
+- [CLI Reference](#-cli-reference)
+- [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab)
+- [Troubleshooting](#-troubleshooting)
+
+
+---
+
+## Option 1: CLI
+
+**Try Plumber in 2 minutes** — no commits, no CI changes, just run it.
+
+### Step 1: Install
+
+```bash
+# macOS/Linux (one-liner)
+curl -LO "https://github.com/getplumber/plumber/releases/latest/download/plumber-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')"
+chmod +x plumber-* && sudo mv plumber-* /usr/local/bin/plumber
+```
+
+> 📦 See [Installation](#-installation) for Windows, Docker, or building from source.
+
+### Step 2: Set Your Token
+
+```bash
+export GITLAB_TOKEN=glpat-xxxx  # needs read_api + read_repository scopes
+```
+
+### Step 3: Run Analysis
+
+```bash
+plumber analyze \
+  --gitlab-url https://gitlab.com \
+  --project mygroup/myproject \
+  --config .plumber.yaml \
+  --threshold 100
+```
+
+Plumber will output a compliance report showing any issues found.
+
+> 💡 **Like what you see?** Add Plumber to your CI/CD with the [GitLab CI Component](#option-2-gitlab-ci-component) for automated checks on the default branch, tags and open merge requests.
+
+---
+
+## Option 2: GitLab CI Component
+
+**Add Plumber to your GitLab pipeline** — it will run automatically on the default branch, tags and open merge requests.
 
 > ⚠️ These instructions are for **gitlab.com**. Self-hosted? See [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab).
 
@@ -75,53 +125,6 @@ include:
 That's it! Plumber will now run on every pipeline and report compliance issues.
 
 > 💡 **Want to customize?** See [Configuration](#%EF%B8%8F-configuration) to set thresholds, enable/disable controls, and whitelist trusted images.
-
----
-
-## Option 2: CLI
-
-**Run Plumber from your terminal** — useful for local testing or for running scripts on multiple projects.
-
-### Step 1: Install
-
-```bash
-# macOS/Linux (one-liner)
-curl -LO "https://github.com/getplumber/plumber/releases/latest/download/plumber-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')"
-chmod +x plumber-* && sudo mv plumber-* /usr/local/bin/plumber
-```
-
-> 📦 See [Installation](#-installation) for Windows, Docker, or building from source.
-
-### Step 2: Set Your Token
-
-```bash
-export GITLAB_TOKEN=glpat-xxxx  # needs read_api + read_repository scopes
-```
-
-### Step 3: Run Analysis
-
-```bash
-plumber analyze \
-  --gitlab-url https://a-gitlab-instance.com \
-  --project mygroup/myproject \
-  --config .plumber.yaml \
-  --threshold 100
-```
-
-Plumber will output a compliance report showing any issues found.
-
----
-
-## 📖 Table of Contents
-
-- [What is Plumber?](#-what-is-plumber)
-- [GitLab CI Component](#option-1-gitlab-ci-component)
-- [CLI](#option-2-cli)
-- [Configuration](#%EF%B8%8F-configuration)
-- [Installation](#-installation)
-- [CLI Reference](#-cli-reference)
-- [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab)
-- [Troubleshooting](#-troubleshooting)
 
 ---
 
