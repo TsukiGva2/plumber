@@ -347,7 +347,9 @@ If you're running a self-hosted GitLab instance, you'll need to host your own co
 
 **Step 2: Enable CI/CD Catalog**
 
-- Go to **Settings → General → Visibility, project features, permissions**
+- Go to **Settings → General**
+- Make sure the project has a **description** (required for CI/CD Catalog)
+- Expand **Visibility, project features, permissions**
 - Toggle **CI/CD Catalog resource** to enabled
 - Click **Save changes**
 
