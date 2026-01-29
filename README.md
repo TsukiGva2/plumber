@@ -74,7 +74,7 @@ include:
 
 That's it! Plumber will now run on every pipeline and report compliance issues.
 
-> 💡 **Want to customize?** See [Configuration](#-configuration) to set thresholds, enable/disable controls, and whitelist trusted images.
+> 💡 **Want to customize?** See [Configuration](#%EF%B8%8F-configuration) to set thresholds, enable/disable controls, and whitelist trusted images.
 
 ---
 
@@ -117,7 +117,7 @@ Plumber will output a compliance report showing any issues found.
 - [What is Plumber?](#-what-is-plumber)
 - [GitLab CI Component](#option-1-gitlab-ci-component)
 - [CLI](#option-2-cli)
-- [Configuration](#-configuration)
+- [Configuration](#%EF%B8%8F-configuration)
 - [Installation](#-installation)
 - [CLI Reference](#-cli-reference)
 - [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab)
@@ -165,7 +165,7 @@ include:
 
 ### Configuration File
 
-Create a `.plumber.yaml` to customize which controls run and how:
+Create a `.plumber.yaml` or modify the existing one to customize which controls run and how:
 
 ```yaml
 version: "1.0"
