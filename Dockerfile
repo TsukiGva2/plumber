@@ -13,6 +13,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Copy default config for embedding
+RUN cp .plumber.yaml internal/defaultconfig/default.yaml
+
 # Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o plumber .
 
