@@ -1,3 +1,10 @@
+## [0.1.23](https://github.com/getplumber/plumber/compare/v0.1.22...v0.1.23) (2026-01-30)
+
+
+### ✨ Features
+
+* **conf:** Correct dockerfile and release file ([34263ec](https://github.com/getplumber/plumber/commit/34263ec71a90183a65e9b1511e90f34ce6d2e1a2))
+
 ## [0.1.22](https://github.com/getplumber/plumber/compare/v0.1.21...v0.1.22) (2026-01-30)
 
 
