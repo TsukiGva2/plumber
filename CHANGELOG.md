@@ -1,3 +1,10 @@
+## [0.1.22](https://github.com/getplumber/plumber/compare/v0.1.21...v0.1.22) (2026-01-30)
+
+
+### ✨ Features
+
+* **conf:** Allow conf generation with command ([7390e76](https://github.com/getplumber/plumber/commit/7390e763055c23a44506ba43db2331fb09a0b0e7))
+
 ## [0.1.21](https://github.com/getplumber/plumber/compare/v0.1.20...v0.1.21) (2026-01-29)
 
 
