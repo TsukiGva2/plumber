@@ -1,3 +1,10 @@
+## [0.1.24](https://github.com/getplumber/plumber/compare/v0.1.23...v0.1.24) (2026-01-30)
+
+
+### ✨ Features
+
+* **brew:** Enable automatic updating of brew tap formula repo upon new release ([ead9860](https://github.com/getplumber/plumber/commit/ead98601a2e355403975b087a5f0da1b3653fb76))
+
 ## [0.1.23](https://github.com/getplumber/plumber/compare/v0.1.22...v0.1.23) (2026-01-30)
 
 
