@@ -104,7 +104,7 @@ plumber analyze \
   --project mygroup/myproject
 ```
 
-Plumber reads your `.plumber.yaml` config and outputs a compliance report.
+Plumber reads your `.plumber.yaml` config and outputs a compliance report. You can also tell it to store the output in JSON format with the `--output` flag.
 
 > 💡 **Like what you see?** Add Plumber to your CI/CD with the [GitLab CI Component](#option-2-gitlab-ci-component) for automated checks on every pipeline.
 
