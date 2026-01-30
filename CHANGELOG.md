@@ -1,3 +1,10 @@
+## [0.1.27](https://github.com/getplumber/plumber/compare/v0.1.26...v0.1.27) (2026-01-30)
+
+
+### ✨ Features
+
+* **ci:** Run on ubuntu 24.04 instead of latest ([b5473d2](https://github.com/getplumber/plumber/commit/b5473d2d527dc6672f332670d729f2eb4701944f))
+
 ## [0.1.26](https://github.com/getplumber/plumber/compare/v0.1.25...v0.1.26) (2026-01-30)
 
 
