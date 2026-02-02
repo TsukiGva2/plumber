@@ -1,3 +1,10 @@
+## [0.1.28](https://github.com/getplumber/plumber/compare/v0.1.27...v0.1.28) (2026-02-02)
+
+
+### ✨ Features
+
+* **update:** Empty commit ([b7bd04f](https://github.com/getplumber/plumber/commit/b7bd04fa8ab8430c15afd625ea27ce3ae2030e8e))
+
 ## [0.1.27](https://github.com/getplumber/plumber/compare/v0.1.26...v0.1.27) (2026-01-30)
 
 
