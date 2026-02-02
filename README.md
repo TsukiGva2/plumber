@@ -386,7 +386,7 @@ plumber generate config
 # Custom filename
 plumber generate config --output my-plumber.yaml
 
-# Overwrite existing file
+# Overwrite existing conf file
 plumber generate config --force
 ```
 
