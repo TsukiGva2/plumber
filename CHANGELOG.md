@@ -1,3 +1,10 @@
+## [0.1.30](https://github.com/getplumber/plumber/compare/v0.1.29...v0.1.30) (2026-02-03)
+
+
+### ✨ Features
+
+* **analysis:** Allow auto-detection for gitlab url and project during analysis + update banner ([e7a20e6](https://github.com/getplumber/plumber/commit/e7a20e6e2b49bdf7cc7805effebc765e73930b2d))
+
 ## [0.1.29](https://github.com/getplumber/plumber/compare/v0.1.28...v0.1.29) (2026-02-03)
 
 
