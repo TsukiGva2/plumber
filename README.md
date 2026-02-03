@@ -89,6 +89,7 @@ mise use -g github:getplumber/plumber
 #### Direct Download
 
 ```bash
+# For Linux/MacOs
 curl -LO "https://github.com/getplumber/plumber/releases/latest/download/plumber-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')"
 chmod +x plumber-* && sudo mv plumber-* /usr/local/bin/plumber
 ```
@@ -118,12 +119,17 @@ export GITLAB_TOKEN=glpat-xxxx
 ### Step 4: Run Analysis
 
 ```bash
-plumber analyze \
-  --gitlab-url https://gitlab.com \
-  --project mygroup/myproject
+# If you're in a git repo with a GitLab remote, just run:
+# the gitlab url and projects are automatically detected from the .git
+# auto-detection requires the remote to be set to 'origin'
+plumber analyze
+
+# Or specify the project explicitly:
+plumber analyze --gitlab-url https://gitlab.com --project mygroup/myproject
 ```
 
-Plumber reads your `.plumber.yaml` config and outputs a compliance report. You can also tell it to store the output in JSON format with the `--output` flag.
+Plumber auto-detects the GitLab URL and project from your git remote but required to the remote to be set to 'origin'.    
+It reads your `.plumber.yaml` config and outputs a compliance report. You can also tell it to store the output in JSON format with the `--output` flag.
 
 > 💡 **Like what you see?** Add Plumber to your CI/CD with the [GitLab CI Component](#option-2-gitlab-ci-component) for automated checks on every pipeline.
 
@@ -343,13 +349,15 @@ plumber analyze [flags]
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--gitlab-url` | Yes | — | GitLab instance URL |
-| `--project` | Yes | — | Project path (e.g., `group/project`) |
+| `--gitlab-url` | No* | auto-detect | GitLab instance URL |
+| `--project` | No* | auto-detect | Project path (e.g., `group/project`) |
 | `--config` | No | `.plumber.yaml` | Path to config file |
 | `--threshold` | No | `100` | Minimum compliance % to pass (0-100) |
 | `--branch` | No | default | Branch to analyze |
 | `--output` | No | — | Write JSON results to file |
 | `--print` | No | `true` | Print text output to stdout |
+
+> \* Auto-detected from git remote (`origin`) if not specified. Supports both SSH and HTTPS remote URLs.
 
 ### Environment Variables
 

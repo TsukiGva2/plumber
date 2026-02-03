@@ -8,6 +8,7 @@ import (
 
 	"github.com/getplumber/plumber/configuration"
 	"github.com/getplumber/plumber/control"
+	"github.com/getplumber/plumber/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -38,9 +39,9 @@ configuration, and runs various checks including:
 Required environment variables:
   GITLAB_TOKEN    GitLab API token (required)
 
-Required flags:
-  --gitlab-url    GitLab instance URL
-  --project       Full path of the project
+Flags (auto-detected from git remote if not specified):
+  --gitlab-url    GitLab instance URL (auto-detected from git remote)
+  --project       Full path of the project (auto-detected from git remote)
 
 Optional flags:
   --config        Path to .plumber.yaml config file (default: .plumber.yaml)
@@ -57,7 +58,10 @@ Examples:
   # Set token via environment variable
   export GITLAB_TOKEN=glpat-xxxx
 
-  # Analyze a project (uses .plumber.yaml and 100% threshold by default)
+  # Analyze current repo (auto-detects GitLab URL and project from git remote)
+  plumber analyze
+
+  # Analyze a specific project
   plumber analyze --gitlab-url https://gitlab.com --project mygroup/myproject
 
   # Analyze with custom config and threshold
@@ -65,9 +69,6 @@ Examples:
 
   # Analyze and save JSON to file (no stdout)
   plumber analyze --gitlab-url https://gitlab.com --project mygroup/myproject --print=false --output results.json
-
-  # Analyze with both text output and JSON file
-  plumber analyze --gitlab-url https://gitlab.com --project mygroup/myproject --output results.json
 `,
 	RunE: runAnalyze,
 }
@@ -75,9 +76,9 @@ Examples:
 func init() {
 	rootCmd.AddCommand(analyzeCmd)
 
-	// Required flags
-	analyzeCmd.Flags().StringVar(&gitlabURL, "gitlab-url", "", "GitLab instance URL (required)")
-	analyzeCmd.Flags().StringVar(&projectPath, "project", "", "Full path of the project (required)")
+	// GitLab connection flags (auto-detected from git remote if not specified)
+	analyzeCmd.Flags().StringVar(&gitlabURL, "gitlab-url", "", "GitLab instance URL (auto-detected from git remote, required otherwise)")
+	analyzeCmd.Flags().StringVar(&projectPath, "project", "", "Project path (auto-detected from git remote, required otherwise)")
 
 	// Optional flags with defaults
 	analyzeCmd.Flags().StringVar(&configFile, "config", ".plumber.yaml", "Path to .plumber.yaml config file")
@@ -85,10 +86,6 @@ func init() {
 	analyzeCmd.Flags().StringVar(&defaultBranch, "branch", "", "Branch to analyze (defaults to project's default branch)")
 	analyzeCmd.Flags().BoolVar(&printOutput, "print", true, "Print text output to stdout")
 	analyzeCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Write JSON results to file")
-
-	// Mark required flags
-	_ = analyzeCmd.MarkFlagRequired("gitlab-url")
-	_ = analyzeCmd.MarkFlagRequired("project")
 }
 
 func runAnalyze(cmd *cobra.Command, args []string) error {
@@ -99,6 +96,31 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 		logrus.SetLevel(logrus.DebugLevel)
 	} else {
 		logrus.SetLevel(logrus.WarnLevel)
+	}
+
+	// Auto-detect GitLab URL and project from git remote if not specified
+	gitlabURLFromFlag := cmd.Flags().Changed("gitlab-url")
+	projectFromFlag := cmd.Flags().Changed("project")
+
+	if !gitlabURLFromFlag || !projectFromFlag {
+		if remoteInfo := utils.DetectGitRemote(); remoteInfo != nil {
+			if !gitlabURLFromFlag {
+				gitlabURL = remoteInfo.URL
+				fmt.Fprintf(os.Stderr, "Auto-detected GitLab URL: %s\n", gitlabURL)
+			}
+			if !projectFromFlag {
+				projectPath = remoteInfo.ProjectPath
+				fmt.Fprintf(os.Stderr, "Auto-detected project: %s\n", projectPath)
+			}
+		}
+	}
+
+	// Validate required values (either from flags or auto-detected)
+	if gitlabURL == "" {
+		return fmt.Errorf("--gitlab-url is required (could not auto-detect from git remote)")
+	}
+	if projectPath == "" {
+		return fmt.Errorf("--project is required (could not auto-detect from git remote)")
 	}
 
 	// Get token from environment variable (required)
@@ -118,6 +140,10 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 	// Load Plumber configuration (required)
 	plumberConfig, configPath, err := configuration.LoadPlumberConfig(configFile)
 	if err != nil {
+		// if err contains "config file not found", tell them they can generate a default config with `plumber config generate`
+		if strings.Contains(err.Error(), "config file not found") {
+			return fmt.Errorf("configuration file not found: %w. You can generate a default config with `plumber config generate`", err)
+		}
 		return fmt.Errorf("configuration error: %w", err)
 	}
 
