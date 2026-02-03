@@ -98,7 +98,7 @@ chmod +x plumber-* && sudo mv plumber-* /usr/local/bin/plumber
 ### Step 2: Generate a Config File
 
 ```bash
-plumber generate config
+plumber config generate
 ```
 
 This creates `.plumber.yaml` with [default](./.plumber.yaml) compliance rules. You can customize it later.
@@ -203,7 +203,7 @@ include:
 Generate a default configuration file with:
 
 ```bash
-plumber generate config
+plumber config generate
 
 Flags:
   -f, --force           Overwrite existing file
@@ -364,12 +364,12 @@ plumber analyze [flags]
 | `0` | Compliance ≥ threshold |
 | `1` | Compliance < threshold or error |
 
-### `plumber generate config`
+### `plumber config generate`
 
 Generate a default `.plumber.yaml` configuration file.
 
 ```bash
-plumber generate config [flags]
+plumber config generate [flags]
 ```
 
 | Flag | Default | Description |
@@ -381,13 +381,41 @@ plumber generate config [flags]
 
 ```bash
 # Generate default config
-plumber generate config
+plumber config generate
 
 # Custom filename
-plumber generate config --output my-plumber.yaml
+plumber config generate --output my-plumber.yaml
 
 # Overwrite existing conf file
-plumber generate config --force
+plumber config generate --force
+```
+
+### `plumber config view`
+
+Display a clean, human-readable view of the effective configuration without comments.
+
+```bash
+plumber config view [flags]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--config`, `-c` | `.plumber.yaml` | Path to configuration file |
+| `--no-color` | `false` | Disable colorized output |
+
+Booleans are colorized for quick scanning: `true` in green, `false` in red. Color is automatically disabled when piping output.
+
+**Examples:**
+
+```bash
+# View the default .plumber.yaml
+plumber config view
+
+# View a specific config file
+plumber config view --config custom-plumber.yaml
+
+# View without colors (for piping or scripts)
+plumber config view --no-color
 ```
 
 ---
