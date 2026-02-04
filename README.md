@@ -182,7 +182,7 @@ Override any input to fit your needs:
 
 ```yaml
 include:
-  - component: gitlab.com/getplumber/plumber/plumber@1.0.0
+  - component: gitlab.com/getplumber/plumber/plumber@v0.1.21
     inputs:
       threshold: 80                           # Minimum % to pass (default: 100)
       config_file: configs/my-plumber.yaml    # Custom config path
@@ -645,7 +645,7 @@ In the project you want to scan:
 
 ```yaml
 include:
-  - component: gitlab.example.com/infrastructure/plumber/plumber@1.0.0
+  - component: gitlab.example.com/infrastructure/plumber/plumber@v1.0.0
 ```
 
 > 💡 Format: `<your-gitlab-host>/<project-path>/plumber@<tag>`
