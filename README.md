@@ -178,7 +178,7 @@ Override any input to fit your needs:
 
 ```yaml
 include:
-  - component: gitlab.com/getplumber/plumber/plumber@~latest
+  - component: gitlab.com/getplumber/plumber/plumber@1.0.0
     inputs:
       threshold: 80                           # Minimum % to pass (default: 100)
       config_file: configs/my-plumber.yaml    # Custom config path
@@ -186,6 +186,8 @@ include:
       branch: develop                         # Specific branch to analyze
       verbose: true                           # Debug output
 ```
+
+> 📦 Find the latest version on the [GitLab CI/CD Catalog](https://gitlab.com/explore/catalog/getplumber/plumber)
 
 <details>
 <summary><b>All available inputs</b></summary>
