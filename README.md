@@ -117,6 +117,8 @@ This creates `.plumber.yaml` with [default](./.plumber.yaml) compliance rules. Y
 2. Create a Personal Access Token with `read_api` + `read_repository` scopes
 3. Export it in your terminal:
 
+> ⚠️ **Important:** The token must belong to a user with **Maintainer** role (or higher) on the project to access branch protection settings and other project configurations.
+
 ```bash
 export GITLAB_TOKEN=glpat-xxxx
 ```
@@ -150,6 +152,8 @@ It reads your `.plumber.yaml` config and outputs a compliance report. You can al
 2. Create a Personal Access Token with `read_api` + `read_repository` scopes
 3. Go to your project's **Settings → CI/CD → Variables**
 4. Add the token as `GITLAB_TOKEN` (masked recommended)
+
+> ⚠️ **Important:** The token must belong to a user with **Maintainer** role (or higher) on the project to access branch protection settings and other project configurations.
 
 
 ### Step 2: Add to Your Pipeline
@@ -534,7 +538,7 @@ plumber analyze [flags]
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GITLAB_TOKEN` | Yes | GitLab API token with `read_api` + `read_repository` scopes |
+| `GITLAB_TOKEN` | Yes | GitLab API token with `read_api` + `read_repository` scopes (from a Maintainer or higher) |
 
 ### Exit Codes
 
@@ -635,6 +639,7 @@ In the project you want to scan:
 3. Go to the project's **Settings → CI/CD → Variables**
 4. Add the token as `GITLAB_TOKEN` (masked recommended)
 
+> ⚠️ The token must belong to a user with **Maintainer** role (or higher) on the project.
 
 **Step 5: Use in your pipelines**
 
@@ -654,7 +659,7 @@ include:
 | Issue | Solution |
 |-------|----------|
 | `GITLAB_TOKEN environment variable is required` | Set `GITLAB_TOKEN` in CI/CD Variables or export it locally |
-| `401 Unauthorized` | Token needs `read_api` + `read_repository` scopes |
+| `401 Unauthorized` | Token needs `read_api` + `read_repository` scopes, from a Maintainer or higher |
 | `403 Forbidden` on MR settings | Expected on non-Premium GitLab; continues without that data |
 | `404 Not Found` | Verify project path and GitLab URL are correct |
 | Configuration file not found | Use absolute path in Docker, relative path otherwise |
