@@ -60,7 +60,8 @@ Choose **one** of these methods. You don't need both:
 - [GitLab CI Component](#option-2-gitlab-ci-component)
 - [Configuration](#%EF%B8%8F-configuration)
   - [Available Controls](#available-controls)
-  - [Example Output](#example-output)
+  - [Outputs](#outputs)
+    - [Example Output](#example-output)
 - [Installation](#-installation)
 - [CLI Reference](#-cli-reference)
 - [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab)
@@ -122,17 +123,15 @@ export GITLAB_TOKEN=glpat-xxxx
 
 ### Step 4: Run Analysis
 
+⚠️ Plumber auto-detects the GitLab URL and project from your git remote but requires the remote to be set to 'origin'. 
 ```bash
-# If you're in a git repo with a GitLab remote, just run:
-# the gitlab url and projects are automatically detected from the .git
-# auto-detection requires the remote to be set to 'origin'
+# if in git remote with remote = origin, run:
 plumber analyze
 
 # Or specify the project explicitly:
 plumber analyze --gitlab-url https://gitlab.com --project mygroup/myproject
 ```
-
-Plumber auto-detects the GitLab URL and project from your git remote but required to the remote to be set to 'origin'.    
+   
 It reads your `.plumber.yaml` config and outputs a compliance report. You can also tell it to store the output in JSON format with the `--output` flag.
 
 > 💡 **Like what you see?** Add Plumber to your CI/CD with the [GitLab CI Component](#option-2-gitlab-ci-component) for automated checks on every pipeline.
@@ -368,7 +367,15 @@ pipelineMustIncludeTemplate:
 
 </details>
 
-### Example Output
+### Outputs
+
+By default, Plumber [prints a colorized](#example-output) detail and a summary of a project's compliance
+* You can disable the printing via the config flags
+
+You can also configure Plumber to output a json file with the results.
+* This is enabled by default if using Plumber Component in Gitlab
+
+#### Example Output
 
 Plumber provides colorized terminal output for easy scanning:
 
