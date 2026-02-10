@@ -1,3 +1,10 @@
+## [0.1.34](https://github.com/getplumber/plumber/compare/v0.1.33...v0.1.34) (2026-02-10)
+
+
+### ✨ Features
+
+* **control:** Support Natural Language in pipeline inclusion for templates and components ([59c4edd](https://github.com/getplumber/plumber/commit/59c4edddb2750296d06d282e7c5efd272e3aa81d))
+
 ## [0.1.33](https://github.com/getplumber/plumber/compare/v0.1.32...v0.1.33) (2026-02-10)
 
 
