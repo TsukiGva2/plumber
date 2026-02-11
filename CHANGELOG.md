@@ -1,3 +1,10 @@
+## [0.1.35](https://github.com/getplumber/plumber/compare/v0.1.34...v0.1.35) (2026-02-11)
+
+
+### 🐛 Bug Fixes
+
+* **detection:** support SSH URL and Git protocol formats in remote auto-detection ([8e162aa](https://github.com/getplumber/plumber/commit/8e162aaf7a9f21cedd183edf2a3aa00c6dc91b5d)), closes [#36](https://github.com/getplumber/plumber/issues/36)
+
 ## [0.1.34](https://github.com/getplumber/plumber/compare/v0.1.33...v0.1.34) (2026-02-10)
 
 
