@@ -1,3 +1,10 @@
+## [0.1.37](https://github.com/getplumber/plumber/compare/v0.1.36...v0.1.37) (2026-02-11)
+
+
+### ✨ Features
+
+* **artifact:** Add new concept: Pipeline Bill Of Materials (PBOM) and add cyclonedx output format support ([7097605](https://github.com/getplumber/plumber/commit/7097605f85123ea7599e67d7b22e34bfa13e726b))
+
 ## [0.1.36](https://github.com/getplumber/plumber/compare/v0.1.35...v0.1.36) (2026-02-11)
 
 
