@@ -1,3 +1,10 @@
+## [0.1.36](https://github.com/getplumber/plumber/compare/v0.1.35...v0.1.36) (2026-02-11)
+
+
+### ✨ Features
+
+* **conf:** Add reference to examples in test file for required includes ([a8ec829](https://github.com/getplumber/plumber/commit/a8ec82961ab5152a3b6a1bff938afbc63978b7e6))
+
 ## [0.1.35](https://github.com/getplumber/plumber/compare/v0.1.34...v0.1.35) (2026-02-11)
 
 
