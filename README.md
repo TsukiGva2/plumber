@@ -70,6 +70,7 @@ Choose **one** of these methods. You don't need both:
 - [CLI Reference](#-cli-reference)
 - [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab)
 - [Troubleshooting](#-troubleshooting)
+- [Blog Posts & Articles](#-blog-posts--articles)
 
 
 ---
@@ -697,12 +698,31 @@ include:
 
 > 💡 **Need help?** [Open an issue](https://github.com/getplumber/plumber/issues) or [join our Discord](https://discord.gg/932xkSU24f)
 
+
 ---
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and coding conventions.
 
+---
+
+## 📰 Blog Posts & Articles
+
+### English
+
+- [Your GitLab Pipelines Are Probably Non-Compliant — Here's How to Fix That in 5 Minutes](https://medium.com/@moukarzeljoseph/your-gitlab-pipelines-are-probably-non-compliant-heres-how-to-fix-that-in-5-minutes-5009614a1fb1) — Medium
+
+### Français
+
+- [Plumber : Vos pipelines GitLab CI/CD sont-ils conformes ?](https://blog.stephane-robert.info/docs/pipeline-cicd/gitlab/outils/plumber/) — Stéphane Robert
+- [Plumber : La compliance à portée de main](https://www.linkedin.com/posts/bbenjamin28_plumber-la-compliance-%C3%A0-port%C3%A9e-de-main-activity-7427248795173699584-vxV4/) — Benjamin Bacle, LinkedIn
+
 ## 📄 License
 
 [Mozilla Public License 2.0 (MPL-2.0)](LICENSE)
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=getplumber/plumber&type=date&legend=top-left)](https://www.star-history.com/#getplumber/plumber&type=date&legend=top-left)
