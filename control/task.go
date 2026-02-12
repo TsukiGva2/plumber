@@ -2,6 +2,8 @@ package control
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/getplumber/plumber/collector"
 	"github.com/getplumber/plumber/configuration"
@@ -77,6 +79,37 @@ func RunAnalysis(conf *configuration.Configuration) (*AnalysisResult, error) {
 	}
 
 	///////////////////////
+	// Resolve CI config source (local file vs remote)
+	///////////////////////
+
+	// Priority:
+	// 1. If --branch is defined: use remote file on that branch
+	// 2. If in a git repo, the local repo IS the analyzed project, and the CI config
+	//    file exists locally: use local file (+ resolve include:local from filesystem)
+	// 3. Otherwise: use remote file (current default behavior)
+	if conf.Branch == "" && conf.IsLocalProject {
+		localCIPath := filepath.Join(conf.GitRepoRoot, project.CiConfPath)
+		if content, err := os.ReadFile(localCIPath); err == nil {
+			conf.LocalCIConfigContent = content
+			conf.UsingLocalCIConfig = true
+			fmt.Fprintf(os.Stderr, "Using local CI configuration (specify --branch to force upstream CI config fetch): %s\n", localCIPath)
+			l.WithField("localCIPath", localCIPath).Info("Using local CI configuration file")
+		} else {
+			l.WithFields(logrus.Fields{
+				"localCIPath": localCIPath,
+				"error":       err,
+			}).Debug("Local CI config file not found, will use remote")
+		}
+	} else if conf.Branch != "" {
+		fmt.Fprintf(os.Stderr, "Using remote CI configuration from branch: %s\n", projectInfo.AnalyzeBranch)
+	}
+
+	result.CIConfigSource = "remote"
+	if conf.UsingLocalCIConfig {
+		result.CIConfigSource = "local"
+	}
+
+	///////////////////////
 	// Run Data Collections
 	///////////////////////
 
@@ -100,6 +133,13 @@ func RunAnalysis(conf *configuration.Configuration) (*AnalysisResult, error) {
 	result.CiValid = pipelineOriginData.CiValid
 	result.CiMissing = pipelineOriginData.CiMissing
 
+	// Capture CI config errors for output
+	if len(pipelineOriginData.CiErrors) > 0 {
+		result.CiErrors = pipelineOriginData.CiErrors
+	} else if pipelineOriginData.MergedResponse != nil && len(pipelineOriginData.MergedResponse.CiConfig.Errors) > 0 {
+		result.CiErrors = pipelineOriginData.MergedResponse.CiConfig.Errors
+	}
+
 	// Store origin metrics
 	if pipelineOriginMetrics != nil {
 		result.PipelineOriginMetrics = &PipelineOriginMetricsSummary{
@@ -117,6 +157,8 @@ func RunAnalysis(conf *configuration.Configuration) (*AnalysisResult, error) {
 	}
 
 	// If limited analysis (CI invalid or missing), return early
+	// Note: when using local CI config, errors are returned directly by the
+	// collector (hard fail) and won't reach this point.
 	if pipelineOriginData.LimitedAnalysis {
 		l.Info("Limited analysis due to CI configuration issues")
 		return result, nil

@@ -106,20 +106,26 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 		logrus.SetLevel(logrus.WarnLevel)
 	}
 
-	// Auto-detect GitLab URL and project from git remote if not specified
+	// Detect git remote info (used for auto-detection AND local CI file matching)
 	gitlabURLFromFlag := cmd.Flags().Changed("gitlab-url")
 	projectFromFlag := cmd.Flags().Changed("project")
 
-	if !gitlabURLFromFlag || !projectFromFlag {
-		if remoteInfo := utils.DetectGitRemote(); remoteInfo != nil {
-			if !gitlabURLFromFlag {
-				gitlabURL = remoteInfo.URL
-				fmt.Fprintf(os.Stderr, "Auto-detected GitLab URL: %s\n", gitlabURL)
-			}
-			if !projectFromFlag {
-				projectPath = remoteInfo.ProjectPath
-				fmt.Fprintf(os.Stderr, "Auto-detected project: %s\n", projectPath)
-			}
+	var gitRepoRoot string
+	var gitRemoteURL string
+	var gitRemoteProjectPath string
+
+	if remoteInfo := utils.DetectGitRemote(); remoteInfo != nil {
+		gitRepoRoot = remoteInfo.RepoRoot
+		gitRemoteURL = remoteInfo.URL
+		gitRemoteProjectPath = remoteInfo.ProjectPath
+
+		if !gitlabURLFromFlag {
+			gitlabURL = remoteInfo.URL
+			fmt.Fprintf(os.Stderr, "Auto-detected GitLab URL: %s\n", gitlabURL)
+		}
+		if !projectFromFlag {
+			projectPath = remoteInfo.ProjectPath
+			fmt.Fprintf(os.Stderr, "Auto-detected project: %s\n", projectPath)
 		}
 	}
 
@@ -169,6 +175,15 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 	conf.ProjectPath = projectPath
 	conf.Branch = defaultBranch
 	conf.PlumberConfig = plumberConfig
+	conf.GitRepoRoot = gitRepoRoot
+
+	// Determine if the local git repo matches the project being analyzed.
+	// Local CI file support only applies when the local repo IS the analyzed project.
+	if gitRepoRoot != "" && gitRemoteURL != "" {
+		sameURL := strings.TrimSuffix(gitRemoteURL, "/") == cleanGitlabURL
+		samePath := gitRemoteProjectPath == projectPath
+		conf.IsLocalProject = sameURL && samePath
+	}
 
 	if verbose {
 		conf.LogLevel = logrus.DebugLevel
@@ -379,13 +394,14 @@ func writePBOMCycloneDXToFile(result *control.AnalysisResult, gitlabURL, branch,
 
 // ANSI color codes
 const (
-	colorReset  = "\033[0m"
-	colorRed    = "\033[31m"
-	colorGreen  = "\033[32m"
-	colorYellow = "\033[33m"
-	colorCyan   = "\033[36m"
-	colorBold   = "\033[1m"
-	colorDim    = "\033[2m"
+	colorReset       = "\033[0m"
+	colorRed         = "\033[31m"
+	colorGreen       = "\033[32m"
+	colorYellow      = "\033[33m"
+	colorCyan        = "\033[36m"
+	colorGreenBright = "\033[92m"
+	colorBold        = "\033[1m"
+	colorDim         = "\033[2m"
 )
 
 // controlSummary holds summary data for a control
@@ -398,8 +414,8 @@ type controlSummary struct {
 
 func printBanner() {
 	fmt.Printf("\n")
-	fmt.Printf("%s", colorCyan)
-	fmt.Printf("  ██████╗ ██╗     ██╗   ██╗ ███╗   ███╗ ██████╗ ███████╗██████╗ \n")
+	fmt.Printf("%s", colorGreenBright)
+	fmt.Printf("  ██████╗ ██╗     ██╗   ██╗ ███╗   ███╗██████╗ ███████╗██████╗ \n")
 	fmt.Printf("  ██╔══██╗██║     ██║   ██║ ████╗ ████║██╔══██╗██╔════╝██╔══██╗\n")
 	fmt.Printf("  ██████╔╝██║     ██║   ██║ ██╔████╔██║██████╔╝█████╗  ██████╔╝\n")
 	fmt.Printf("  ██╔═══╝ ██║     ██║   ██║ ██║╚██╔╝██║██╔══██╗██╔══╝  ██╔══██╗\n")
@@ -420,8 +436,24 @@ func outputText(result *control.AnalysisResult, threshold, compliance float64, c
 	// Warning if no controls could be evaluated
 	if controlCount == 0 {
 		fmt.Printf("  %s⚠ WARNING: No controls could be evaluated!%s\n", colorRed, colorReset)
-		fmt.Printf("  %sData collection failed - compliance defaults to 0%%.%s\n", colorDim, colorReset)
-		fmt.Printf("  %sCheck the logs above for details (use --verbose for more info).%s\n\n", colorDim, colorReset)
+
+		if len(result.CiErrors) > 0 {
+			fmt.Printf("  %sCI configuration errors:%s\n", colorRed, colorReset)
+			for _, e := range result.CiErrors {
+				fmt.Printf("    %s•%s %s\n", colorRed, colorReset, e)
+			}
+			fmt.Println()
+		} else if result.CiMissing {
+			fmt.Printf("  %sCI configuration file is missing from the project.%s\n\n", colorDim, colorReset)
+		} else {
+			fmt.Printf("  %sData collection failed - compliance defaults to 0%%.%s\n", colorDim, colorReset)
+			fmt.Printf("  %sUse --verbose for more info.%s\n\n", colorDim, colorReset)
+		}
+	}
+
+	// CI config source info
+	if result.CIConfigSource == "local" {
+		fmt.Printf("  %sCI Config Source: local file%s\n\n", colorCyan, colorReset)
 	}
 
 	// Control 1: Container images must not use forbidden tags

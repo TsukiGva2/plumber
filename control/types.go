@@ -14,8 +14,10 @@ type AnalysisResult struct {
 	ProjectID   int    `json:"projectId"`
 
 	// CI configuration status
-	CiValid   bool `json:"ciValid"`
-	CiMissing bool `json:"ciMissing"`
+	CiValid        bool     `json:"ciValid"`
+	CiMissing      bool     `json:"ciMissing"`
+	CiErrors       []string `json:"ciErrors,omitempty"`  // Specific CI config errors from GitLab
+	CIConfigSource string   `json:"ciConfigSource"`      // "local" or "remote"
 
 	// Pipeline origin data
 	PipelineOriginMetrics *PipelineOriginMetricsSummary `json:"pipelineOriginMetrics,omitempty"`

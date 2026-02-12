@@ -31,12 +31,12 @@ Plumber is a compliance scanner for GitLab. It reads your `.gitlab-ci.yml` and r
 - Container images using mutable tags (`latest`, `dev`)
 - Container images from untrusted registries
 - Unprotected branches
-- Hardcoded jobs not from includes/components
+- Hardcoded jobs not from external includes/components
 - Outdated includes/templates
 - Forbidden version patterns (e.g., `main`, `HEAD`)
 - Missing required components or templates
 
-**How does it work?** Plumber connects to your GitLab instance via API, analyzes your pipeline configuration, and reports any issues it finds. You define what's allowed in a config file (`.plumber.yaml`), and Plumber tells you if your project complies.
+**How does it work?** Plumber connects to your GitLab instance via API, analyzes your pipeline configuration, and reports any issues it finds. You define what's allowed in a config file (`.plumber.yaml`), and Plumber tells you if your project complies. When running locally from your git repo, Plumber uses your **local `.gitlab-ci.yml`** allowing you to validate changes before pushing.
 
 <p align="center">
   <img src="assets/component.gif" alt="Plumber Demo" width="700">
@@ -50,11 +50,6 @@ Choose **one** of these methods. You don't need both:
 |--------|----------|--------------|
 | **[CLI](#option-1-cli)** | Quick evaluation, local testing, one-off scans | Install binary and run from terminal |
 | **[GitLab CI Component](#option-2-gitlab-ci-component)** | Automated checks on every pipeline run | Add 2 lines to your `.gitlab-ci.yml` |
-
-> 💡 **Want to see it in action?** Check out our example projects:
-> - [go-build-test-compliant](https://gitlab.com/getplumber/examples/go-build-test-compliant/-/pipelines) - A compliant project passing all checks
-> - [go-build-test-non-compliant](https://gitlab.com/getplumber/examples/go-build-test-non-compliant/-/pipelines) - A non-compliant project showing detected issues
-
 
 ---
 
@@ -72,6 +67,7 @@ Choose **one** of these methods. You don't need both:
 - [CLI Reference](#-cli-reference)
 - [Self-Hosted GitLab](#%EF%B8%8F-self-hosted-gitlab)
 - [Troubleshooting](#-troubleshooting)
+- [See it in action](#-see-it-in-action)
 - [Blog Posts & Articles](#-blog-posts--articles)
 
 
@@ -142,6 +138,20 @@ plumber analyze --gitlab-url https://gitlab.com --project mygroup/myproject
 ```
    
 It reads your `.plumber.yaml` config and outputs a compliance report. You can also tell it to store the output in JSON format with the `--output` flag.
+
+#### Local CI Configuration
+
+When running from your project's git repository, Plumber automatically uses your **local `.gitlab-ci.yml`** instead of fetching it from the remote. This lets you validate changes before pushing.
+
+The source of the `.gitlab-ci.yml` is resolved by priority:
+
+1. **`--branch` is specified** → always uses the remote file from that branch
+2. **In a git repo** and the local repo matches the analyzed project → uses the local file
+3. **Otherwise** → uses the remote file from the project's default branch
+
+If the local CI configuration is invalid, Plumber exits with an error showing the specific validation messages from GitLab so you can fix issues before pushing.
+
+> **Note:** When using local CI configuration, `include:local` files are also read from your local filesystem. Other include types (components, templates, project files, remote URLs) are always resolved from their remote sources. Jobs from `include:local` files are treated as hardcoded by the analysis since they are project-specific and not from reusable external sources.
 
 > 💡 **Like what you see?** Add Plumber to your CI/CD with the [GitLab CI Component](#option-2-gitlab-ci-component) for automated checks on every pipeline.
 
@@ -245,7 +255,7 @@ Detects container images using mutable tags that are expected to change unexpect
 
 When `containerImagesMustBePinnedByDigest` is set to `true`, this control operates in strict mode:
 **all** images must be pinned by digest (e.g., `alpine@sha256:...`). This takes precedence over the
-forbidden tags list — even standard version tags like `alpine:3.19` or `node:20` will be flagged.
+forbidden tags list even standard version tags like `alpine:3.19` or `node:20` will be flagged.
 
 ```yaml
 containerImageMustNotUseForbiddenTags:
@@ -310,7 +320,7 @@ branchMustBeProtected:
 <details>
 <summary><b>4. Pipeline must not include hardcoded jobs</b></summary>
 
-Detects jobs defined directly in `.gitlab-ci.yml` instead of coming from includes/components.
+Detects jobs that are project-specific rather than coming from reusable external sources (components, templates, project file includes from other repos, remote URLs). This includes jobs defined directly in `.gitlab-ci.yml` as well as jobs from `include:local` files since local includes are just the project's CI config split across files, not reusable external sources.
 
 ```yaml
 pipelineMustNotIncludeHardcodedJobs:
@@ -357,7 +367,7 @@ Ensures required GitLab CI/CD components are included in the pipeline.
 
 There are two ways to define requirements (use one, not both):
 
-**Expression syntax** — a natural boolean expression using `AND`, `OR`, and parentheses:
+**Expression syntax**: a natural boolean expression using `AND`, `OR`, and parentheses:
 
 ```yaml
 pipelineMustIncludeComponent:
@@ -369,7 +379,7 @@ pipelineMustIncludeComponent:
   # required: (components/sast/sast AND components/secret-detection/secret-detection) OR your-org/full-security/full-security
 ```
 
-**Array syntax** — a list of groups using "OR of ANDs" logic:
+**Array syntax**: a list of groups using "OR of ANDs" logic:
 
 ```yaml
 pipelineMustIncludeComponent:
@@ -390,7 +400,7 @@ Ensures required templates (project includes) are present in the pipeline.
 
 There are two ways to define requirements (use one, not both):
 
-**Expression syntax** — a natural boolean expression using `AND`, `OR`, and parentheses:
+**Expression syntax**: a natural boolean expression using `AND`, `OR`, and parentheses:
 
 ```yaml
 pipelineMustIncludeTemplate:
@@ -401,7 +411,7 @@ pipelineMustIncludeTemplate:
   # required: (templates/go/go AND templates/trivy/trivy) OR templates/full-go-pipeline
 ```
 
-**Array syntax** — a list of groups using "OR of ANDs" logic:
+**Array syntax**: a list of groups using "OR of ANDs" logic:
 
 ```yaml
 pipelineMustIncludeTemplate:
@@ -423,7 +433,7 @@ You can also configure Plumber to output a json file with the results.
 
 #### Pipeline Bill of Materials (PBOM) & CycloneDX
 
-Plumber can generate a **PBOM** — a complete inventory of all dependencies in your CI/CD pipeline (container images, components, templates, includes). Two formats are available:
+Plumber can generate a **PBOM**: a complete inventory of all dependencies in your CI/CD pipeline (container images, components, templates, includes). Two formats are available:
 
 ```bash
 # Native PBOM format (detailed, pipeline-specific)
@@ -435,7 +445,7 @@ plumber analyze --pbom-cyclonedx pipeline-sbom.json
 
 The CycloneDX output follows the [CycloneDX 1.5 specification](https://cyclonedx.org/docs/1.5/json/) and is compatible with tools like Grype, Trivy, and Dependency-Track. When using the GitLab CI component, the CycloneDX file is automatically uploaded as a [GitLab CycloneDX report](https://docs.gitlab.com/ci/yaml/artifacts_reports/#artifactsreportscyclonedx).
 
-> **Note:** CI/CD components and templates do not have CVEs in public vulnerability databases. The PBOM is primarily an **inventory and compliance tool** — it tells you *what's in your pipeline*, not whether those items have known vulnerabilities. For image vulnerability scanning, use `trivy image` or `grype` directly on the images.
+> **Note:** CI/CD components and templates do not have CVEs in public vulnerability databases. The PBOM is primarily an **inventory and compliance tool**: it tells you *what's in your pipeline*, not whether those items have known vulnerabilities. For image vulnerability scanning, use `trivy image` or `grype` directly on the images.
 
 📖 See [docs/PBOM.md](docs/PBOM.md) for full format documentation, field reference, and tool compatibility.
 
@@ -733,6 +743,15 @@ include:
 ## 🤝 Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and coding conventions.
+
+---
+
+## 💡 See it in action 
+Check out our example projects:
+- [go-build-test-compliant](https://gitlab.com/getplumber/examples/go-build-test-compliant/-/pipelines) - A compliant project passing all checks
+- [go-build-test-non-compliant](https://gitlab.com/getplumber/examples/go-build-test-non-compliant/-/pipelines) - A non-compliant project showing detected issues
+- [go-build-test-with-hash](https://gitlab.com/getplumber/examples/go-test-with-hash/-/pipelines)  - A partially compliant project with digest-pinned images
+- [go-test-with-local-include](https://gitlab.com/getplumber/examples/go-test-with-local-include/-/pipelines) - A Partially compliant project with local file inclusions
 
 ---
 

@@ -26,6 +26,12 @@ type Configuration struct {
 	GitlabRetryMaxBackoff     time.Duration // Maximum backoff time for GitLab API retries
 	GitlabRetryBackoffFactor  float64       // Backoff multiplication factor for exponential backoff
 
+	// Local CI configuration (from local filesystem)
+	LocalCIConfigContent []byte // Content of local .gitlab-ci.yml (nil if using remote)
+	UsingLocalCIConfig   bool   // True when using local CI config file
+	GitRepoRoot          string // Root of the git repository (empty if not in a git repo)
+	IsLocalProject       bool   // True when the local git repo matches the project being analyzed
+
 	// Logging
 	LogLevel logrus.Level
 

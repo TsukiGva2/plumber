@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -150,6 +151,7 @@ func GetFullGitlabCI(project *ProjectInfo, ref, token, url string, conf *configu
 	gitlabConf := GitlabCIConf{}
 	mergedConf := GitlabCIConf{}
 	mergedResponse := MergedCIConfResponse{}
+	var err error
 
 	if project.Archived {
 		l.Info("Archived project, cannot retrieve merged CI conf")
@@ -162,19 +164,37 @@ func GetFullGitlabCI(project *ProjectInfo, ref, token, url string, conf *configu
 	}
 
 	// Get the configuration file
-	confByte, errPlatform, err := FetchGitlabFile(project.Path, project.CiConfPath, ref, token, url, conf)
-	confStr := string(confByte)
-	if err != nil || errPlatform != nil {
-		l.WithFields(logrus.Fields{
-			"err":         err,
-			"errPlatform": errPlatform,
-		}).Error("Unable to get project's CI conf file")
-
-		if errPlatform != nil {
-			return nil, nil, nil, "", "", errPlatform
+	// If local CI config content is provided (via --local or auto-detected), use it
+	// instead of fetching from the remote repository
+	var confByte []byte
+	if conf != nil && conf.LocalCIConfigContent != nil {
+		// Resolve include:local entries from the local filesystem so they use
+		// local content instead of being resolved from the remote repo by GitLab.
+		// Since include:local jobs are always treated as hardcoded in the analysis,
+		// inlining them doesn't affect include attribution.
+		resolved, resolveErr := ResolveLocalIncludes(conf.LocalCIConfigContent, conf.GitRepoRoot)
+		if resolveErr != nil {
+			l.WithError(resolveErr).Error("Failed to resolve local includes")
+			return nil, nil, nil, "", "", resolveErr
 		}
-		return nil, nil, nil, "", "", err
+		confByte = resolved
+		l.Info("Using local CI configuration file instead of remote")
+	} else {
+		var errPlatform error
+		confByte, errPlatform, err = FetchGitlabFile(project.Path, project.CiConfPath, ref, token, url, conf)
+		if err != nil || errPlatform != nil {
+			l.WithFields(logrus.Fields{
+				"err":         err,
+				"errPlatform": errPlatform,
+			}).Error("Unable to get project's CI conf file")
+
+			if errPlatform != nil {
+				return nil, nil, nil, "", "", errPlatform
+			}
+			return nil, nil, nil, "", "", err
+		}
 	}
+	confStr := string(confByte)
 
 	// Get the merged response
 	mergedResponse, err = FetchGitlabMergedCIConf(project.Path, confStr, project.LatestHeadCommitSha, token, url, conf)
@@ -201,6 +221,122 @@ func GetFullGitlabCI(project *ProjectInfo, ref, token, url string, conf *configu
 	}
 
 	return &gitlabConf, &mergedConf, &mergedResponse, confStr, mergedResponse.CiConfig.MergedYaml, nil
+}
+
+// ResolveLocalIncludes pre-processes a local CI configuration to inline include:local entries
+// from the local filesystem. Other include types (component, template, project, remote) are
+// preserved for GitLab's ciConfig API to resolve server-side.
+//
+// If the YAML cannot be parsed or no local includes are found, the original content is returned
+// unchanged. If a local include file cannot be read, it is left in the include list for GitLab
+// to resolve from the remote repository.
+func ResolveLocalIncludes(content []byte, repoRoot string) ([]byte, error) {
+	l := logger.WithFields(logrus.Fields{
+		"action":   "ResolveLocalIncludes",
+		"repoRoot": repoRoot,
+	})
+
+	if repoRoot == "" {
+		return content, nil
+	}
+
+	// Parse the YAML into a generic map to inspect includes
+	var yamlDoc map[interface{}]interface{}
+	if err := yaml.Unmarshal(content, &yamlDoc); err != nil {
+		l.WithError(err).Debug("Unable to parse YAML for local include resolution, using content as-is")
+		return content, nil
+	}
+
+	includeRaw, ok := yamlDoc["include"]
+	if !ok {
+		return content, nil // No includes at all
+	}
+
+	// Normalize include entries to a slice
+	var includes []interface{}
+	switch v := includeRaw.(type) {
+	case []interface{}:
+		includes = v
+	case string:
+		// Single string is shorthand for local include
+		includes = []interface{}{v}
+	case map[interface{}]interface{}:
+		// Single map entry
+		includes = []interface{}{v}
+	default:
+		l.WithField("type", fmt.Sprintf("%T", includeRaw)).Debug("Unexpected include type, skipping resolution")
+		return content, nil
+	}
+
+	var nonLocalIncludes []interface{}
+	var localContents [][]byte
+	hasLocalIncludes := false
+
+	for _, inc := range includes {
+		switch entry := inc.(type) {
+		case string:
+			// A bare string in the include list is a local include
+			filePath := filepath.Join(repoRoot, entry)
+			fileContent, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("unable to read local include '%s': %w", entry, err)
+			}
+			l.WithField("path", entry).Info("Resolved local include from filesystem")
+			localContents = append(localContents, fileContent)
+			hasLocalIncludes = true
+
+		case map[interface{}]interface{}:
+			if localPath, ok := entry["local"]; ok {
+				pathStr := fmt.Sprintf("%v", localPath)
+				filePath := filepath.Join(repoRoot, pathStr)
+				fileContent, err := os.ReadFile(filePath)
+				if err != nil {
+					return nil, fmt.Errorf("unable to read local include '%s': %w", pathStr, err)
+				}
+				l.WithField("path", pathStr).Info("Resolved local include from filesystem")
+				localContents = append(localContents, fileContent)
+				hasLocalIncludes = true
+			} else {
+				nonLocalIncludes = append(nonLocalIncludes, entry)
+			}
+
+		default:
+			nonLocalIncludes = append(nonLocalIncludes, entry)
+		}
+	}
+
+	if !hasLocalIncludes {
+		return content, nil // No local includes to resolve
+	}
+
+	// Update the include list to only keep non-local entries
+	if len(nonLocalIncludes) > 0 {
+		yamlDoc["include"] = nonLocalIncludes
+	} else {
+		delete(yamlDoc, "include")
+	}
+
+	// Marshal the modified main config back to YAML
+	mainYaml, err := yaml.Marshal(yamlDoc)
+	if err != nil {
+		l.WithError(err).Warn("Unable to marshal modified YAML, using original content")
+		return content, nil
+	}
+
+	// Build combined YAML: local file contents first, then main config
+	var combined []byte
+	for _, lc := range localContents {
+		combined = append(combined, lc...)
+		combined = append(combined, '\n')
+	}
+	combined = append(combined, mainYaml...)
+
+	l.WithFields(logrus.Fields{
+		"localIncludesResolved": len(localContents),
+		"nonLocalIncludes":      len(nonLocalIncludes),
+	}).Info("Local includes resolved from filesystem")
+
+	return combined, nil
 }
 
 // ParseGitlabCIJob parses a job from GitLab CI conf

@@ -12,6 +12,7 @@ type GitRemoteInfo struct {
 	Host        string // e.g., "gitlab.com" or "gitlab.example.com"
 	ProjectPath string // e.g., "group/project" or "group/subgroup/project"
 	URL         string // The full GitLab URL, e.g., "https://gitlab.com"
+	RepoRoot    string // Absolute path to the git repository root
 }
 
 // DetectGitRemote attempts to detect GitLab URL and project path from git remote.
@@ -30,7 +31,26 @@ func DetectGitRemote() *GitRemoteInfo {
 		return nil
 	}
 
-	return ParseGitRemoteURL(remoteURL)
+	info := ParseGitRemoteURL(remoteURL)
+	if info == nil {
+		return nil
+	}
+
+	// Also detect the git repository root directory
+	info.RepoRoot = DetectGitRepoRoot()
+
+	return info
+}
+
+// DetectGitRepoRoot returns the absolute path to the root of the current git repository.
+// Returns an empty string if not in a git repository.
+func DetectGitRepoRoot() string {
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(output))
 }
 
 // ParseGitRemoteURL parses a git remote URL and extracts host and project path.

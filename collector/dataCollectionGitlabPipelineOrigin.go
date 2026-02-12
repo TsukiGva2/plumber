@@ -77,6 +77,7 @@ type GitlabPipelineOriginData struct {
 	MergedResponse  *gitlab.MergedCIConfResponse
 	CiValid         bool
 	CiMissing       bool
+	CiErrors        []string // Specific CI config errors for output
 	LimitedAnalysis bool
 
 	// Origins and jobs data
@@ -356,6 +357,8 @@ func (dc *GitlabPipelineOriginDataCollection) Run(project *gitlab.ProjectInfo, t
 			l.WithError(err).Warn("Unable to retrieve project's CI configuration (404). CI is missing but project exists. Data collection will continue with limited data.")
 		} else {
 			data.CiValid = false
+			// Store the error as a CI error so it can be shown in the output
+			data.CiErrors = []string{err.Error()}
 			l.WithError(err).Warn("Unable to retrieve project's CI merged configuration. Data collection will continue with limited data.")
 		}
 
@@ -861,6 +864,12 @@ func (dc *GitlabPipelineOriginDataCollection) Run(project *gitlab.ProjectInfo, t
 				continue
 			}
 
+			// include:local is just the project's own CI config split into
+			// multiple files — those jobs are treated as hardcoded since they
+			// don't come from reusable external sources (components, templates,
+			// project files from other repos, remote URLs).
+			isLocalInclude := include.Type == glOriginLocal
+
 			// Get inputs for this include from the map using the origin hash
 			// The hash was already calculated
 			includeInputs := includeInputsMap[originData.OriginHash]
@@ -909,13 +918,18 @@ func (dc *GitlabPipelineOriginDataCollection) Run(project *gitlab.ProjectInfo, t
 
 					// If job was in hardocoded list, it means it has overrides
 					if _, ok := data.JobHardcodedMap[job]; ok {
+						if isLocalInclude {
+							// Local include: keep as hardcoded
+							data.JobHardcodedMap[job] = true
+							data.JobMap[job].IsHardocded = true
+						} else {
+							// External include: not hardcoded
+							data.JobHardcodedMap[job] = false
+							data.JobMap[job].IsHardocded = false
 
-						// Job is not hardcoded
-						data.JobHardcodedMap[job] = false
-						data.JobMap[job].IsHardocded = false
-
-						// Job is overriden
-						data.JobMap[job].IsOverridden = true
+							// Job is overriden
+							data.JobMap[job].IsOverridden = true
+						}
 					}
 
 					// Add the job to this origin
@@ -939,10 +953,12 @@ func (dc *GitlabPipelineOriginDataCollection) Run(project *gitlab.ProjectInfo, t
 					continue
 				}
 
-				// If job was in hardocoded list, it means it has overrides
-				if _, ok := data.JobHardcodedMap[job]; ok {
-
-					// Job is not hardcoded
+				if isLocalInclude {
+					// Local include: mark job as hardcoded
+					data.JobHardcodedMap[job] = true
+					data.JobMap[job].IsHardocded = true
+				} else if _, ok := data.JobHardcodedMap[job]; ok {
+					// External include: not hardcoded, it has overrides
 					data.JobHardcodedMap[job] = false
 					data.JobMap[job].IsHardocded = false
 
