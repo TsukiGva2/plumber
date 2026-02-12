@@ -22,9 +22,6 @@ type ControlsConfig struct {
 	// ContainerImageMustNotUseForbiddenTags control configuration
 	ContainerImageMustNotUseForbiddenTags *ImageForbiddenTagsControlConfig `yaml:"containerImageMustNotUseForbiddenTags,omitempty"`
 
-	// ContainerImagesMustBePinnedByDigest control configuration
-	ContainerImagesMustBePinnedByDigest *ImagePinnedByDigestControlConfig `yaml:"containerImagesMustBePinnedByDigest,omitempty"`
-
 	// ContainerImageMustComeFromAuthorizedSources control configuration
 	ContainerImageMustComeFromAuthorizedSources *ImageAuthorizedSourcesControlConfig `yaml:"containerImageMustComeFromAuthorizedSources,omitempty"`
 
@@ -54,12 +51,18 @@ type ImageForbiddenTagsControlConfig struct {
 
 	// Tags is a list of forbidden tags (e.g., latest, dev)
 	Tags []string `yaml:"tags,omitempty"`
+
+	// ContainerImagesMustBePinnedByDigest when true, ALL images must use immutable digest references.
+	// Takes precedence over the forbidden tags list — any image not pinned by digest is flagged.
+	ContainerImagesMustBePinnedByDigest *bool `yaml:"containerImagesMustBePinnedByDigest,omitempty"`
 }
 
-// ImagePinnedByDigestControlConfig configuration for the digest pinning control
-type ImagePinnedByDigestControlConfig struct {
-	// Enabled controls whether this check runs
-	Enabled *bool `yaml:"enabled,omitempty"`
+// IsPinnedByDigestRequired returns whether all images must be pinned by digest
+func (c *ImageForbiddenTagsControlConfig) IsPinnedByDigestRequired() bool {
+	if c == nil || c.ContainerImagesMustBePinnedByDigest == nil {
+		return false
+	}
+	return *c.ContainerImagesMustBePinnedByDigest
 }
 
 // ImageAuthorizedSourcesControlConfig configuration for the authorized image sources control
@@ -287,15 +290,6 @@ func (c *PlumberConfig) GetContainerImageMustNotUseForbiddenTagsConfig() *ImageF
 	return c.Controls.ContainerImageMustNotUseForbiddenTags
 }
 
-// GetContainerImagesMustBePinnedByDigestConfig returns the control configuration
-// Returns nil if not configured
-func (c *PlumberConfig) GetContainerImagesMustBePinnedByDigestConfig() *ImagePinnedByDigestControlConfig {
-	if c == nil {
-		return nil
-	}
-	return c.Controls.ContainerImagesMustBePinnedByDigest
-}
-
 // GetContainerImageMustComeFromAuthorizedSourcesConfig returns the control configuration
 // Returns nil if not configured
 func (c *PlumberConfig) GetContainerImageMustComeFromAuthorizedSourcesConfig() *ImageAuthorizedSourcesControlConfig {
@@ -308,15 +302,6 @@ func (c *PlumberConfig) GetContainerImageMustComeFromAuthorizedSourcesConfig() *
 // IsEnabled returns whether the control is enabled
 // Returns false if not properly configured
 func (c *ImageForbiddenTagsControlConfig) IsEnabled() bool {
-	if c == nil || c.Enabled == nil {
-		return false
-	}
-	return *c.Enabled
-}
-
-// IsEnabled returns whether the control is enabled
-// Returns false if not properly configured
-func (c *ImagePinnedByDigestControlConfig) IsEnabled() bool {
 	if c == nil || c.Enabled == nil {
 		return false
 	}

@@ -63,9 +63,11 @@ func TestIsImagePinnedByDigest(t *testing.T) {
 	}
 }
 
-func TestGitlabImagePinnedByDigestRunEnabled(t *testing.T) {
-	conf := &GitlabImagePinnedByDigestConf{
-		Enabled: true,
+func TestForbiddenTagsWithMustBePinnedByDigestEnabled(t *testing.T) {
+	conf := &GitlabImageForbiddenTagsConf{
+		Enabled:              true,
+		ForbiddenTags:        []string{"latest"},
+		MustBePinnedByDigest: true,
 	}
 
 	sha256Digest := strings.Repeat("a", 64)
@@ -76,14 +78,17 @@ func TestGitlabImagePinnedByDigestRunEnabled(t *testing.T) {
 		Images: []collector.GitlabPipelineImageInfo{
 			{
 				Link: "docker.io/library/alpine@sha256:" + sha256Digest,
+				Tag:  "",
 				Job:  "build",
 			},
 			{
 				Link: "docker.io/library/node:20",
+				Tag:  "20",
 				Job:  "test",
 			},
 			{
 				Link: "docker.io/library/golang",
+				Tag:  "",
 				Job:  "lint",
 			},
 		},
@@ -93,6 +98,9 @@ func TestGitlabImagePinnedByDigestRunEnabled(t *testing.T) {
 
 	if result.Skipped {
 		t.Fatalf("expected control to run, but it was skipped")
+	}
+	if !result.MustBePinnedByDigest {
+		t.Fatalf("expected MustBePinnedByDigest to be true in result")
 	}
 	if result.Compliance != 0 {
 		t.Fatalf("expected compliance to be 0, got %v", result.Compliance)
@@ -111,9 +119,11 @@ func TestGitlabImagePinnedByDigestRunEnabled(t *testing.T) {
 	}
 }
 
-func TestGitlabImagePinnedByDigestRunDisabled(t *testing.T) {
-	conf := &GitlabImagePinnedByDigestConf{
-		Enabled: false,
+func TestForbiddenTagsWithMustBePinnedByDigestDisabled(t *testing.T) {
+	conf := &GitlabImageForbiddenTagsConf{
+		Enabled:              true,
+		ForbiddenTags:        []string{"latest", "dev"},
+		MustBePinnedByDigest: false,
 	}
 
 	data := &collector.GitlabPipelineImageData{
@@ -122,6 +132,50 @@ func TestGitlabImagePinnedByDigestRunDisabled(t *testing.T) {
 		Images: []collector.GitlabPipelineImageInfo{
 			{
 				Link: "docker.io/library/node:20",
+				Tag:  "20",
+				Job:  "build",
+			},
+			{
+				Link: "docker.io/library/alpine:latest",
+				Tag:  "latest",
+				Job:  "test",
+			},
+		},
+	}
+
+	result := conf.Run(data)
+
+	if result.Skipped {
+		t.Fatalf("expected control to run, but it was skipped")
+	}
+	if result.MustBePinnedByDigest {
+		t.Fatalf("expected MustBePinnedByDigest to be false in result")
+	}
+	// Only "latest" is forbidden, "20" is fine
+	if len(result.Issues) != 1 {
+		t.Fatalf("expected 1 issue, got %d", len(result.Issues))
+	}
+	if result.Issues[0].Tag != "latest" {
+		t.Fatalf("expected issue tag to be 'latest', got '%s'", result.Issues[0].Tag)
+	}
+	if result.Metrics.UsingForbiddenTags != 1 {
+		t.Fatalf("expected usingForbiddenTags to be 1, got %d", result.Metrics.UsingForbiddenTags)
+	}
+}
+
+func TestForbiddenTagsControlDisabled(t *testing.T) {
+	conf := &GitlabImageForbiddenTagsConf{
+		Enabled:              false,
+		MustBePinnedByDigest: true,
+	}
+
+	data := &collector.GitlabPipelineImageData{
+		CiValid:   true,
+		CiMissing: false,
+		Images: []collector.GitlabPipelineImageInfo{
+			{
+				Link: "docker.io/library/node:20",
+				Tag:  "20",
 				Job:  "build",
 			},
 		},
@@ -137,5 +191,42 @@ func TestGitlabImagePinnedByDigestRunDisabled(t *testing.T) {
 	}
 	if len(result.Issues) != 0 {
 		t.Fatalf("expected no issues when skipped, got %d", len(result.Issues))
+	}
+}
+
+func TestMustBePinnedByDigestAllPinned(t *testing.T) {
+	sha256Digest := strings.Repeat("a", 64)
+	conf := &GitlabImageForbiddenTagsConf{
+		Enabled:              true,
+		MustBePinnedByDigest: true,
+	}
+
+	data := &collector.GitlabPipelineImageData{
+		CiValid:   true,
+		CiMissing: false,
+		Images: []collector.GitlabPipelineImageInfo{
+			{
+				Link: "docker.io/library/alpine@sha256:" + sha256Digest,
+				Tag:  "",
+				Job:  "build",
+			},
+			{
+				Link: "docker.io/library/node:20@sha256:" + sha256Digest,
+				Tag:  "20",
+				Job:  "test",
+			},
+		},
+	}
+
+	result := conf.Run(data)
+
+	if result.Compliance != 100 {
+		t.Fatalf("expected compliance to be 100 when all pinned, got %v", result.Compliance)
+	}
+	if len(result.Issues) != 0 {
+		t.Fatalf("expected 0 issues, got %d", len(result.Issues))
+	}
+	if result.Metrics.PinnedByDigest != 2 {
+		t.Fatalf("expected pinnedByDigest to be 2, got %d", result.Metrics.PinnedByDigest)
 	}
 }

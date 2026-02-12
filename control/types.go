@@ -25,7 +25,6 @@ type AnalysisResult struct {
 
 	// Control results
 	ImageForbiddenTagsResult        *GitlabImageForbiddenTagsResult               `json:"imageForbiddenTagsResult,omitempty"`
-	ImagePinnedByDigestResult       *GitlabImagePinnedByDigestResult              `json:"imagePinnedByDigestResult,omitempty"`
 	ImageAuthorizedSourcesResult    *GitlabImageAuthorizedSourcesResult           `json:"imageAuthorizedSourcesResult,omitempty"`
 	BranchProtectionResult          *GitlabBranchProtectionResult                 `json:"branchProtectionResult,omitempty"`
 	HardcodedJobsResult             *GitlabPipelineHardcodedJobsResult            `json:"hardcodedJobsResult,omitempty"`

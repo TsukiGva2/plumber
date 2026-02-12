@@ -16,14 +16,14 @@ import (
 
 var (
 	// Flags for analyze command
-	gitlabURL        string
-	projectPath      string
-	defaultBranch    string
-	outputFile       string
-	printOutput      bool
-	configFile       string
-	threshold        float64
-	pbomFile         string
+	gitlabURL         string
+	projectPath       string
+	defaultBranch     string
+	outputFile        string
+	printOutput       bool
+	configFile        string
+	threshold         float64
+	pbomFile          string
 	pbomCycloneDXFile string
 )
 
@@ -221,11 +221,6 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 		controlCount++
 	}
 
-	if result.ImagePinnedByDigestResult != nil && !result.ImagePinnedByDigestResult.Skipped {
-		complianceSum += result.ImagePinnedByDigestResult.Compliance
-		controlCount++
-	}
-
 	// Calculate average compliance
 	// If no controls ran (e.g., data collection failed), compliance is 0% - we can't verify anything
 	var compliance float64 = 0
@@ -412,19 +407,37 @@ func outputText(result *control.AnalysisResult, threshold, compliance float64, c
 
 	// Control 1: Container images must not use forbidden tags
 	if result.ImageForbiddenTagsResult != nil {
+		controlName := "Container images must not use forbidden tags"
+		if result.ImageForbiddenTagsResult.MustBePinnedByDigest {
+			controlName = "Container images must not use forbidden tags (pinned by digest)"
+		}
+
 		ctrl := controlSummary{
-			name:       "Container images must not use forbidden tags",
+			name:       controlName,
 			compliance: result.ImageForbiddenTagsResult.Compliance,
 			issues:     len(result.ImageForbiddenTagsResult.Issues),
 			skipped:    result.ImageForbiddenTagsResult.Skipped,
 		}
 		controls = append(controls, ctrl)
 
-		printControlHeader("Container images must not use forbidden tags", result.ImageForbiddenTagsResult.Compliance, result.ImageForbiddenTagsResult.Skipped)
+		printControlHeader(controlName, result.ImageForbiddenTagsResult.Compliance, result.ImageForbiddenTagsResult.Skipped)
 
 		if result.ImageForbiddenTagsResult.Skipped {
 			fmt.Printf("  %sStatus: SKIPPED (disabled in configuration)%s\n", colorDim, colorReset)
+		} else if result.ImageForbiddenTagsResult.MustBePinnedByDigest {
+			// Digest pinning mode
+			fmt.Printf("  Total Images: %d\n", result.ImageForbiddenTagsResult.Metrics.Total)
+			fmt.Printf("  Pinned By Digest: %d\n", result.ImageForbiddenTagsResult.Metrics.PinnedByDigest)
+			fmt.Printf("  Not Pinned By Digest: %d\n", result.ImageForbiddenTagsResult.Metrics.NotPinnedByDigest)
+
+			if len(result.ImageForbiddenTagsResult.Issues) > 0 {
+				fmt.Printf("\n  %sImages Not Pinned By Digest Found:%s\n", colorYellow, colorReset)
+				for _, issue := range result.ImageForbiddenTagsResult.Issues {
+					fmt.Printf("    %s•%s Job '%s' uses image without digest pinning: %s\n", colorYellow, colorReset, issue.Job, issue.Link)
+				}
+			}
 		} else {
+			// Standard forbidden tags mode
 			fmt.Printf("  Total Images: %d\n", result.ImageForbiddenTagsResult.Metrics.Total)
 			fmt.Printf("  Using Forbidden Tags: %d\n", result.ImageForbiddenTagsResult.Metrics.UsingForbiddenTags)
 
@@ -657,35 +670,6 @@ func outputText(result *control.AnalysisResult, threshold, compliance float64, c
 		fmt.Println()
 	}
 
-	// Control 9: Container images must be pinned by digest
-	if result.ImagePinnedByDigestResult != nil {
-		ctrl := controlSummary{
-			name:       "Container images must be pinned by digest",
-			compliance: result.ImagePinnedByDigestResult.Compliance,
-			issues:     len(result.ImagePinnedByDigestResult.Issues),
-			skipped:    result.ImagePinnedByDigestResult.Skipped,
-		}
-		controls = append(controls, ctrl)
-
-		printControlHeader("Container images must be pinned by digest", result.ImagePinnedByDigestResult.Compliance, result.ImagePinnedByDigestResult.Skipped)
-
-		if result.ImagePinnedByDigestResult.Skipped {
-			fmt.Printf("  %sStatus: SKIPPED (disabled in configuration)%s\n", colorDim, colorReset)
-		} else {
-			fmt.Printf("  Total Images: %d\n", result.ImagePinnedByDigestResult.Metrics.Total)
-			fmt.Printf("  Pinned By Digest: %d\n", result.ImagePinnedByDigestResult.Metrics.PinnedByDigest)
-			fmt.Printf("  Not Pinned By Digest: %d\n", result.ImagePinnedByDigestResult.Metrics.NotPinnedByDigest)
-
-			if len(result.ImagePinnedByDigestResult.Issues) > 0 {
-				fmt.Printf("\n  %sImages Not Pinned By Digest Found:%s\n", colorYellow, colorReset)
-				for _, issue := range result.ImagePinnedByDigestResult.Issues {
-					fmt.Printf("    %s•%s Job '%s' uses image without digest pinning: %s\n", colorYellow, colorReset, issue.Job, issue.Link)
-				}
-			}
-		}
-		fmt.Println()
-	}
-
 	// Summary Section
 	printSectionHeader("Summary")
 	fmt.Println()
@@ -736,8 +720,14 @@ func printSectionHeader(name string) {
 func printIssuesTable(controls []controlSummary) {
 	fmt.Printf("  %sIssues%s\n", colorBold, colorReset)
 
-	// Calculate column widths
-	controlWidth := 52
+	// Calculate column widths dynamically based on longest control name
+	controlWidth := 52 // minimum width
+	for _, ctrl := range controls {
+		needed := len(ctrl.name) + 2 // +2 for padding
+		if needed > controlWidth {
+			controlWidth = needed
+		}
+	}
 	issuesWidth := 10
 
 	// Top border
@@ -795,8 +785,14 @@ func printIssuesTable(controls []controlSummary) {
 func printComplianceTable(controls []controlSummary, overallCompliance, threshold float64) {
 	fmt.Printf("  %sCompliance%s\n", colorBold, colorReset)
 
-	// Calculate column widths
-	controlWidth := 52
+	// Calculate column widths dynamically based on longest control name
+	controlWidth := 52 // minimum width
+	for _, ctrl := range controls {
+		needed := len(ctrl.name) + 2 // +2 for padding
+		if needed > controlWidth {
+			controlWidth = needed
+		}
+	}
 	complianceWidth := 12
 	statusWidth := 10
 
