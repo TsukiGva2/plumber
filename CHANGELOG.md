@@ -1,3 +1,10 @@
+## [0.1.41](https://github.com/getplumber/plumber/compare/v0.1.40...v0.1.41) (2026-02-12)
+
+
+### ✨ Features
+
+* **local:** Enable lint, validation and analysis of local .gitlab-ci.yml as well as local reoslution of include: local types. ([5a2a3aa](https://github.com/getplumber/plumber/commit/5a2a3aa3b67c8489289bf98f47f9494f386f6458))
+
 ## [0.1.40](https://github.com/getplumber/plumber/compare/v0.1.39...v0.1.40) (2026-02-12)
 
 
