@@ -179,7 +179,7 @@ Add this to your `.gitlab-ci.yml`:
 
 ```yaml
 include:
-  - component: gitlab.com/getplumber/plumber/plumber@v0.1.22
+  - component: gitlab.com/getplumber/plumber/plumber@v0.1.23
 ```
 * Get the latest version from the [Catalog](https://gitlab.com/explore/catalog/getplumber/plumber)
 
@@ -199,7 +199,7 @@ Override any input to fit your needs:
 
 ```yaml
 include:
-  - component: gitlab.com/getplumber/plumber/plumber@v0.1.22
+  - component: gitlab.com/getplumber/plumber/plumber@v0.1.23
     inputs:
       threshold: 80                           # Minimum % to pass (default: 100)
       config_file: configs/my-plumber.yaml    # Custom config path
