@@ -7,19 +7,19 @@ assignees: ''
 
 ---
 
-**Describe the bug**
+## **Describe the bug**
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+## **To Reproduce**
 Steps to reproduce the behavior:
 
-**Expected behavior**
+## **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
+## **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Relevant versions and configuration files**
+## **Relevant versions and configuration files**
  - OS: Mac, Linux, Docker image
  - Gitlab Version 
  - Plumber version
@@ -27,5 +27,5 @@ If applicable, add screenshots to help explain your problem.
  - Gitlab Component version
  - Your Gitlab component Configuration
 
-**Additional context**
+## **Additional context**
 Add any other context about the problem here.
