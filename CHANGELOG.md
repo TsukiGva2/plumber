@@ -1,3 +1,10 @@
+## [0.1.42](https://github.com/getplumber/plumber/compare/v0.1.41...v0.1.42) (2026-02-17)
+
+
+### ✨ Features
+
+* **analysis:** Add --mr-comment to create mr comments during analysis. Add --badge to create/update Plumber compliance badge when running on default remote branch ([4cba483](https://github.com/getplumber/plumber/commit/4cba4839ce3512ef2da7ff5b9512dca701d2a7f7))
+
 ## [0.1.41](https://github.com/getplumber/plumber/compare/v0.1.40...v0.1.41) (2026-02-12)
 
 
