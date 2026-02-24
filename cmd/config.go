@@ -312,26 +312,15 @@ func runConfigGenerate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runConfigValidate(cmd *cobra.Command, args []string) error {
-	// Suppress debug logs for clean output (unless verbose)
-	if !verbose {
-		logrus.SetLevel(logrus.WarnLevel)
-	}
-
+func validateConfigFileWarnings(configFile string) error {
 	// Read raw config file for unknown key validation
-	rawData, err := os.ReadFile(configValidateFile)
+	rawData, err := os.ReadFile(configFile)
 	if err != nil {
-		return fmt.Errorf("failed to read configuration file: %w", err)
+		return err
 	}
 
 	// Check for unknown keys in raw YAML (before struct parsing loses them)
 	warnings := configuration.ValidateKnownKeys(rawData)
-
-	// Also validate the config parses correctly and passes structural validation
-	_, _, err = configuration.LoadPlumberConfig(configValidateFile)
-	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
 
 	if len(warnings) > 0 {
 		fmt.Fprintf(os.Stderr, "Configuration validation warnings:\n")
@@ -342,6 +331,27 @@ func runConfigValidate(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "Please fix the warnings above for best results.\n")
 	} else {
 		fmt.Printf("Configuration %s is valid.\n", configValidateFile)
+	}
+
+	return nil
+}
+
+func runConfigValidate(cmd *cobra.Command, args []string) error {
+	// Suppress debug logs for clean output (unless verbose)
+	if !verbose {
+		logrus.SetLevel(logrus.WarnLevel)
+	}
+
+	// Read raw config for unknown keys check
+	err := validateConfigFileWarnings(configValidateFile)
+	if err != nil {
+		return fmt.Errorf("failed to validate configuration file: %w", err)
+	}
+
+	// Validate the config parses correctly and passes structural validation
+	_, _, err = configuration.LoadPlumberConfig(configValidateFile)
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	return nil
