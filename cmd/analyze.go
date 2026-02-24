@@ -178,6 +178,12 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 	// Clean up URL
 	cleanGitlabURL := strings.TrimSuffix(gitlabURL, "/")
 
+	// Read raw config for unknown keys check
+	err = validateConfigFileWarnings(configFile)
+	if err != nil {
+		return fmt.Errorf("failed to validate configuration file: %w", err)
+	}
+
 	// Load Plumber configuration (required)
 	plumberConfig, configPath, err := configuration.LoadPlumberConfig(configFile)
 	if err != nil {
