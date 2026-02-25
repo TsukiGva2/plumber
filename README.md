@@ -614,10 +614,10 @@ brew install plumber
 To install a specific version:
 
 ```bash
-brew install getplumber/plumber/plumber@0.1.44
+brew install getplumber/plumber/plumber@0.1.47
 ```
 
-> **Note:** Versioned formulas are keg-only. Use the full path for example `/usr/local/opt/plumber@0.1.44/bin/plumber` or run `brew link plumber@0.1.44` to add it to your PATH.
+> **Note:** Versioned formulas are keg-only. Use the full path for example `/usr/local/opt/plumber@0.1.47/bin/plumber` or run `brew link plumber@0.1.47` to add it to your PATH.
 
 ### Mise
 
@@ -753,6 +753,21 @@ plumber analyze [flags]
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GITLAB_TOKEN` | Yes | GitLab API token with `read_api` + `read_repository` scopes (from a Maintainer or higher). Use `api` scope instead if `--mr-comment` or `--badge` is enabled. |
+| `PLUMBER_NO_UPDATE_CHECK` | No | Set to any value (e.g., `1`) to disable the automatic version check. |
+
+### Automatic Version Check
+
+When running locally, Plumber checks GitHub for newer releases on every invocation and prints an upgrade notice if one is available. The check runs asynchronously and has a 3-second timeout, so it never slows down the analysis.
+
+The check is **automatically skipped** when:
+- Running in **CI environments** (`CI` or `GITLAB_CI` environment variables are set)
+- Using a **development build** (version is `dev`)
+
+To disable it manually, set `PLUMBER_NO_UPDATE_CHECK`:
+
+```bash
+export PLUMBER_NO_UPDATE_CHECK=1
+```
 
 ### Exit Codes
 
