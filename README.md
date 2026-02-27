@@ -938,8 +938,18 @@ In the project you want to scan:
 **Step 5: Use in your pipelines**
 
 ```yaml
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS # prevents duplicate pipelines
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
 include:
   - component: gitlab.example.com/infrastructure/plumber/plumber@v0.1.28
+    # inputs:
+    #   stage: .pre | by default runs in .pre which only runs if there is at least another CI job in another stage
 ```
 
 To update: re-import or manually pull upstream changes.
@@ -1009,8 +1019,18 @@ In the project you want to scan:
 **Step 7: Use in your pipelines**
 
 ```yaml
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS # prevents duplicate pipelines
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
 include:
   - component: gitlab.example.com/infrastructure/plumber/plumber@v0.1.28
+    # inputs:
+    #   stage: .pre | by default runs in .pre which only runs if there is at least another CI job in another stage
 ```
 
 </details>
